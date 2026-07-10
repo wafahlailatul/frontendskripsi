@@ -1,0 +1,54 @@
+{
+  "project_info": {
+    "project_number": "930462743126",
+    "project_id": "heartifyy-f5957",
+    "storage_bucket": "heartifyy-f5957.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:930462743126:android:aa6df780ee26338aef19f7",
+        "android_client_info": {
+          "package_name": "wafah.com.kesehatan_jantung"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "930462743126-79fcj6bm7kaa690d8nre2jb96niui7di.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "wafah.com.kesehatan_jantung",
+            "certificate_hash": "10c3dd542e67fd2a92800a13ec969b024629e150"
+          }
+        },
+        {
+          "client_id": "930462743126-ufpfbngjtqhl9lcmutnej1ho910cil30.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtAQrPgrxsGZ8o-4lfG06zRlVk8ooDwmI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "930462743126-ufpfbngjtqhl9lcmutnej1ho910cil30.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "930462743126-esf9l3onb10580scvba0f8pbek3dmke8.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "wafah.com.kesehatanJantung"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

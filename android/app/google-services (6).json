@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "930462743126",
+    "project_id": "heartifyy-f5957",
+    "storage_bucket": "heartifyy-f5957.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:930462743126:android:aa6df780ee26338aef19f7",
+        "android_client_info": {
+          "package_name": "wafah.com.kesehatan_jantung"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCtAQrPgrxsGZ8o-4lfG06zRlVk8ooDwmI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
