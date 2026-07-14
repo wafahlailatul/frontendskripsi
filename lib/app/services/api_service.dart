@@ -7,7 +7,7 @@ import 'package:kesehatan_jantung/app/services/storage_service.dart';
 class ApiService {
 
   static const String baseUrl =
-      'https://heartify.my.id';
+      'https://api2.atlass.my.id';
 
    static const FlutterSecureStorage storage =
       FlutterSecureStorage();
@@ -1068,50 +1068,36 @@ static Future<Map<String, dynamic>> resendOtp(
   // =====================================
   // LOGIN
   // =====================================
-  static Future<Map<String,dynamic>> login(
+  static Future<Map<String, dynamic>> login(
     String email,
-    String password
+    String password,
 ) async {
 
-
   final response = await http.post(
-
     Uri.parse("$baseUrl/login"),
-
-    headers:{
-      "Content-Type":
-      "application/json"
+    headers: {
+      "Content-Type": "application/json",
     },
-
-    body:jsonEncode({
-
-      "email":email,
-      "password":password
-
-    })
-
+    body: jsonEncode({
+      "email": email,
+      "password": password,
+    }),
   );
 
+  final result = jsonDecode(response.body);
 
-  final result =
-      jsonDecode(response.body);
+  if (result["status"] == "success") {
 
+    await StorageService.saveToken(result["token"]);
 
+    String? token = await StorageService.getToken();
 
-  if(result["status"]=="success") {
-
-
-    await StorageService.saveToken(
-        result["token"]
-    );
-
-
+    print("==================================");
+    print("TOKEN LOGIN : $token");
+    print("==================================");
   }
 
-
-
   return result;
-
 }
 
 

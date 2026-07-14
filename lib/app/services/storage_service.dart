@@ -3,9 +3,15 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class StorageService {
 
+  // Konfigurasi eksplisit untuk Android agar pakai EncryptedSharedPreferences
+  // Ini WAJIB agar token bisa dibaca di release/hosting build
+  static const _androidOptions = AndroidOptions(
+    encryptedSharedPreferences: true,
+  );
 
-  static const storage =
-      FlutterSecureStorage();
+  static const storage = FlutterSecureStorage(
+    aOptions: _androidOptions,
+  );
 
 
 
@@ -16,6 +22,7 @@ class StorageService {
     await storage.write(
       key: "token",
       value: token,
+      aOptions: _androidOptions,
     );
 
   }
@@ -26,7 +33,8 @@ class StorageService {
   async {
 
     return await storage.read(
-      key: "token"
+      key: "token",
+      aOptions: _androidOptions,
     );
 
   }
@@ -37,7 +45,8 @@ class StorageService {
   async {
 
     await storage.delete(
-      key: "token"
+      key: "token",
+      aOptions: _androidOptions,
     );
 
   }
