@@ -1,28 +1,35 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
+    <!-- Izin Bluetooth -->
     <uses-permission android:name="android.permission.BLUETOOTH"/>
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN"/>
     <uses-permission android:name="android.permission.BLUETOOTH_SCAN"/>
     <uses-permission android:name="android.permission.BLUETOOTH_CONNECT"/>
 
+    <!-- Izin Lokasi & GPS -->
     <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_COARSE_LOCATION"/>
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION"/>
 
+    <!-- Izin Sensor Fisik & Pedometer -->
     <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION"/>
 
+    <!-- Izin Foreground Service (Wajib untuk Android 14+) -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_LOCATION"/>
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_HEALTH"/>
 
+    <!-- Izin Sistem & Notifikasi -->
     <uses-permission android:name="android.permission.WAKE_LOCK"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
-
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
 
+    <!-- Izin Alarm & Fullscreen -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" android:maxSdkVersion="32" />
     <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
     <uses-permission android:name="android.permission.USE_FULL_SCREEN_INTENT" />
 
+    <!-- Izin Health Connect (Jika dipakai) -->
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
     <uses-permission android:name="android.permission.health.READ_STEPS" />
     <uses-permission android:name="android.permission.health.READ_SLEEP" />
@@ -34,7 +41,14 @@
         android:label="kesehatan_jantung"
         android:icon="@mipmap/ic_launcher"
         android:usesCleartextTraffic="true">
+        
+        <!-- Pendaftaran Foreground Service (Kunci Agar Service Tidak Crash) -->
+        <service
+            android:name="id.flutter.flutter_background_service.BackgroundService"
+            android:foregroundServiceType="location|health"
+            android:exported="true" />
 
+        <!-- Receiver untuk Flutter Local Notifications -->
         <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationReceiver" android:exported="false" />
         <receiver android:name="com.dexterous.flutterlocalnotifications.ScheduledNotificationBootReceiver" android:exported="false">
             <intent-filter>
@@ -45,6 +59,7 @@
             </intent-filter>
         </receiver>
 
+        <!-- Activity Utama -->
         <activity
             android:name=".MainActivity"
             android:exported="true"
@@ -73,6 +88,15 @@
     </application>
 
     <queries>
+        <!-- Mengizinkan aplikasi membuka link web HTTP/HTTPS -->
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="https" />
+        </intent>
+        <intent>
+            <action android:name="android.intent.action.VIEW" />
+            <data android:scheme="http" />
+        </intent>
         <intent>
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>

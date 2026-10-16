@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:kesehatan_jantung/app/services/api_service.dart';
 
 class AnalysisView extends StatefulWidget {
@@ -84,186 +85,7 @@ Color getEatingColor(String value) {
     super.dispose();
   }
 
-  Map<String, dynamic> calculateRiskDetail({
-    required int age,
-    required double bmi,
-    required String gender,
-    required String smoking,
-    required int activity,
-    required int sleep,
-    required String stress,
-    required String eating,
-    required String smokingEnvironment,
-  }) {
-    int score = 0;
-    List<String> reasons = [];
-    List<String> suggestions = [];
-    Map<String, int> factorWeight = {};
 
-    // 1. UMUR
-    if (age >= 45) {
-      score += 2;
-      factorWeight["Umur"] = 2;
-      reasons.add("Usia di atas 45 tahun meningkatkan risiko penyakit jantung.");
-    } else if (age >= 35) {
-      score += 1;
-      factorWeight["Umur"] = 1;
-    }
-
-    // 2. GENDER
-    if (gender == "Laki-laki") {
-      score += 1;
-      factorWeight["Gender"] = 1;
-      reasons.add("Laki-laki memiliki risiko lebih tinggi dibanding perempuan pada usia muda.");
-    }
-
-    // 3. BMI
-    if (bmi >= 30) {
-      score += 3;
-      factorWeight["BMI"] = 3;
-      reasons.add("Obesitas meningkatkan beban kerja jantung.");
-      suggestions.add("Turunkan berat badan secara bertahap.");
-    } else if (bmi >= 25) {
-      score += 2;
-      factorWeight["BMI"] = 2;
-      reasons.add("Kelebihan berat badan meningkatkan risiko penyakit jantung.");
-    }
-
-    // 4. MEROKOK
-    if (smoking == "Perokok Aktif") {
-      score += 3;
-      factorWeight["Merokok"] = 3;
-      reasons.add("Merokok merusak pembuluh darah dan meningkatkan tekanan darah.");
-      suggestions.add("Segera berhenti merokok.");
-    } else if (smoking == "Perokok Pasif") {
-      score += 2;
-      factorWeight["Merokok"] = 2;
-      reasons.add("Paparan asap rokok tetap meningkatkan risiko penyakit jantung.");
-    }
-
-    // 5. LINGKUNGAN PEROKOK
-    if (smokingEnvironment == "Ya") {
-      score += 2;
-      factorWeight["Lingkungan"] = 2;
-      reasons.add("Sering berada di lingkungan perokok meningkatkan risiko akibat paparan asap rokok.");
-      suggestions.add("Usahakan berada di area bebas rokok.");
-    }
-
-    // 6. AKTIVITAS
-    if (activity < 60) {
-      score += 2;
-      factorWeight["Aktivitas"] = 2;
-      reasons.add("Aktivitas fisik masih sangat kurang.");
-    } else if (activity < 150) {
-      score += 1;
-      factorWeight["Aktivitas"] = 1;
-    }
-
-    // 7. TIDUR
-    if (sleep < 6 || sleep > 9) {
-      score += 2;
-      factorWeight["Tidur"] = 2;
-      reasons.add("Durasi tidur tidak ideal.");
-      suggestions.add("Usahakan tidur 7-8 jam per hari.");
-    }
-
-    // 8. STRES
-    // 8. STRES
-if (stress == "Tinggi") {
-
-  score += 2;
-  factorWeight["Stres"] = 2;
-
-  reasons.add(
-    "Stres tinggi dapat meningkatkan tekanan darah dan memengaruhi kesehatan jantung."
-  );
-
-  suggestions.add(
-    "Lakukan relaksasi, olahraga ringan, dan perbaiki kualitas tidur."
-  );
-
-} else if (stress == "Sedang") {
-
-  score += 1;
-  factorWeight["Stres"] = 1;
-
-  reasons.add(
-    "Stres sedang mulai memengaruhi kondisi tubuh dan kebiasaan sehari-hari."
-  );
-
-  suggestions.add(
-    "Kelola stres dengan istirahat cukup dan aktivitas yang menyenangkan."
-  );
-
-}
-
-    // 9. MAKAN
-    if (eating == "Tidak Sehat") {
-      score += 2;
-      factorWeight["Pola Makan"] = 2;
-      reasons.add("Pola makan tidak sehat meningkatkan risiko kolesterol dan hipertensi.");
-      suggestions.add("Kurangi makanan tinggi garam dan lemak.");
-    } else if (eating == "Cukup Sehat") {
-      score += 1;
-      factorWeight["Pola Makan"] = 1;
-    }
-
-    String category = score >= 12 ? "Risiko Tinggi" : score >= 6 ? "Risiko Sedang" : "Risiko Rendah";
-    String topFactor = "-";
-    int max = 0;
-    factorWeight.forEach((key, value) {
-      if (value > max) {
-        max = value;
-        topFactor = key;
-      }
-    });
-
-    // ================= LOGIKA REKOMENDASI OLAHRAGA DINAMIS =================
-    int sportsDuration = 0;
-    int sportsTargetSteps = 7000; 
-    String sportsRecommendation = "Pertahankan aktivitas fisik aktif Anda saat ini minimal 150 menit/minggu.";
-
-    if (activity < 60) {
-      if (age < 35) {
-        if (bmi < 25) {
-          sportsDuration = 150; sportsTargetSteps = 9000;
-          sportsRecommendation = "Rekomendasi olahraga: Joging selama 150 menit/minggu (Bisa dibagi menjadi 3 sesi @50 menit).";
-        } else {
-          sportsDuration = 180; sportsTargetSteps = 8000;
-          sportsRecommendation = "Rekomendasi olahraga: Joging intensitas rendah selama 180 menit/minggu (Bisa dibagi menjadi 4 sesi @45 menit) untuk optimalisasi pembakaran lemak.";
-        }
-      } 
-      else if (age >= 35 && age < 45) {
-        if (bmi < 25) {
-          sportsDuration = 120; sportsTargetSteps = 7500;
-          sportsRecommendation = "Rekomendasi olahraga: Joging selama 120 menit/minggu (Bisa dibagi menjadi 3 sesi @40 menit) untuk memelihara performa miokardium.";
-        } else {
-          sportsDuration = 150; sportsTargetSteps = 6500;
-          sportsRecommendation = "Rekomendasi olahraga: Joging selama 150 menit/minggu (Bisa dibagi menjadi 5 sesi pendek @30 menit) guna menghindari stres berlebih pada persendian kaki.";
-        }
-      } 
-      else { 
-        if (bmi < 25) {
-          sportsDuration = 90; sportsTargetSteps = 5500;
-          sportsRecommendation = "Rekomendasi olahraga: Joging ringan diselingi jalan cepat selama 90 menit/minggu (Bisa dibagi menjadi 3 sesi @30 menit).";
-        } else {
-          sportsDuration = 75; sportsTargetSteps = 4500;
-          sportsRecommendation = "Rekomendasi olahraga: Joging sangat ringan atau jalan santai selama 75 menit/minggu (Bisa dibagi menjadi 3 sesi @25 menit) untuk keamanan sirkulasi darah kardiovaskular.";
-        }
-      }
-    }
-
-    return {
-      "score": score,
-      "category": category,
-      "reasons": reasons,
-      "suggestions": suggestions,
-      "topFactor": topFactor,
-      "sports_duration": sportsDuration,
-      "sports_target_steps": sportsTargetSteps,
-      "sports_recommendation": sportsRecommendation,
-    };
-  }
 String getStressDescription(String level) {
 
   if(level == "Rendah"){
@@ -697,7 +519,8 @@ String getEatingDescription(String value) {
                   int activity = int.tryParse(aktivitasController.text) ?? 0;
                   int sleep = int.tryParse(tidurController.text) ?? 0;
 
-                  final result = calculateRiskDetail(
+                  // Panggil API (ML Model)
+                  final apiResponse = await ApiService.saveAnalysis(
                     age: age,
                     bmi: bmi,
                     gender: gender,
@@ -709,24 +532,27 @@ String getEatingDescription(String value) {
                     eating: eatingPattern,
                   );
 
-                  // MASUK KE DATABASE VIA API SERVICE
-                  await ApiService.saveAnalysis(
-                    age: age,
-                    bmi: bmi,
-                    gender: gender,
-                    smoking: smoking,
-                    smokingEnvironment: smokingEnvironment,
-                    activity: activity,
-                    sleep: sleep,
-                    stress: stressLevel,
-                    eating: eatingPattern,
-                    score: result["score"],
-                    category: result["category"],
-                    topFactor: result["topFactor"],
-                    sportsDuration: result["sports_duration"],       
-                    sportsTargetSteps: result["sports_target_steps"], 
-                    sportsRecommendation: result["sports_recommendation"], 
-                  );
+                  if (apiResponse["status"] != "success") {
+                     String errorMsg = apiResponse["message"] ?? "Gagal menganalisis risiko";
+                     ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Error: $errorMsg")));
+                     return;
+                  }
+
+                  final result = apiResponse["data"];
+
+                  // Siapkan dummy list untuk UI yang bergantung pada rule-based lama
+                  result["reasons"] = ["Berdasarkan prediksi model Machine Learning Random Forest."];
+                  result["suggestions"] = [result["sportsRecommendation"] ?? "Tetap jaga pola hidup sehat."];
+                  
+                  // Pastikan field memiliki nama yang sesuai dengan UI
+                  result["sports_duration"] = result["sportsDuration"];
+                  result["sports_target_steps"] = result["sportsTargetSteps"];
+                  result["sports_recommendation"] = result["sportsRecommendation"];
+
+                  // SIMPAN UNTUK SMART REMINDER DI HOME
+                  final prefs = await SharedPreferences.getInstance();
+                  await prefs.setString('last_analysis_date', DateTime.now().toIso8601String());
+                  await prefs.setString('last_risk_category', result["category"]);
 
                   // POPUP HASIL DIALOG
                   showDialog(
@@ -745,38 +571,151 @@ String getEatingDescription(String value) {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           mainAxisSize: MainAxisSize.min,
                           children: [
+                            // ── Skor & Kategori ──
                             Container(
                               width: double.infinity,
-                              padding: const EdgeInsets.all(12),
+                              padding: const EdgeInsets.all(14),
                               decoration: BoxDecoration(
-                                color: Colors.teal.shade50,
-                                borderRadius: BorderRadius.circular(12),
+                                color: result["category"] == "Risiko Tinggi"
+                                    ? Colors.red.shade50
+                                    : result["category"] == "Risiko Sedang"
+                                        ? Colors.orange.shade50
+                                        : Colors.green.shade50,
+                                borderRadius: BorderRadius.circular(14),
+                                border: Border.all(
+                                  color: result["category"] == "Risiko Tinggi"
+                                      ? Colors.red.shade200
+                                      : result["category"] == "Risiko Sedang"
+                                          ? Colors.orange.shade200
+                                          : Colors.green.shade200,
+                                ),
                               ),
                               child: Column(
                                 children: [
-                                  Text("Skor Risiko: ${result["score"]}", style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                                  Text("${result["category"]}", style: TextStyle(fontWeight: FontWeight.w600, color: Colors.teal.shade900)),
+                                  Text(
+                                    "Skor Risiko: ${result["score"]}",
+                                    style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                                  ),
+                                  Text(
+                                    "${result["category"]}",
+                                    style: TextStyle(
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15,
+                                      color: result["category"] == "Risiko Tinggi"
+                                          ? Colors.red.shade700
+                                          : result["category"] == "Risiko Sedang"
+                                              ? Colors.orange.shade700
+                                              : Colors.green.shade700,
+                                    ),
+                                  ),
                                 ],
                               ),
                             ),
-                            const SizedBox(height: 16),
-                            const Text("🔥 Faktor Utama:", style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text("${result["topFactor"]}", style: const TextStyle(color: Colors.redAccent)),
+                            const SizedBox(height: 14),
+
+                            // ── Faktor Utama ──
+                            const Text("🔥 Faktor Risiko Utama:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 4),
+                            Text("${result["topFactor"]}", style: const TextStyle(color: Colors.redAccent, fontWeight: FontWeight.w600)),
                             const SizedBox(height: 12),
-                            const Text("⚠️ Penyebab:", style: TextStyle(fontWeight: FontWeight.bold)),
-                            Text((result["reasons"] as List).join("\n"), style: const TextStyle(fontSize: 13)),
-                            
+
+                            // ── Penyebab ──
+                            const Text("⚠️ Penyebab Risiko:", style: TextStyle(fontWeight: FontWeight.bold)),
+                            const SizedBox(height: 6),
+                            ...(result["reasons"] as List).map((r) => Padding(
+                              padding: const EdgeInsets.only(bottom: 4),
+                              child: Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  const Text("• ", style: TextStyle(color: Colors.redAccent, fontWeight: FontWeight.bold)),
+                                  Expanded(child: Text(r.toString(), style: const TextStyle(fontSize: 13))),
+                                ],
+                              ),
+                            )),
+
+                            // ── Saran Pencegahan (suggestions) ──
+                            if ((result["suggestions"] as List).isNotEmpty) ...[
+                              const SizedBox(height: 12),
+                              const Divider(),
+                              const SizedBox(height: 8),
+                              const Text("✅ Langkah Pencegahan:", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D9488))),
+                              const SizedBox(height: 6),
+                              ...(result["suggestions"] as List).map((s) => Container(
+                                margin: const EdgeInsets.only(bottom: 6),
+                                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                                decoration: BoxDecoration(
+                                  color: const Color(0xFF0D9488).withOpacity(0.07),
+                                  borderRadius: BorderRadius.circular(10),
+                                  border: Border.all(color: const Color(0xFF0D9488).withOpacity(0.2)),
+                                ),
+                                child: Row(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    const Icon(Icons.check_circle_outline_rounded, color: Color(0xFF0D9488), size: 16),
+                                    const SizedBox(width: 8),
+                                    Expanded(child: Text(s.toString(), style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)))),
+                                  ],
+                                ),
+                              )),
+                            ],
+
                             const SizedBox(height: 12),
                             const Divider(),
-                            const SizedBox(height: 12),
-                            
-                            // OUTPUT TARGET OLAHRAGA DI UI
+                            const SizedBox(height: 8),
+
+                            // ── Rekomendasi Olahraga ──
                             const Text("🏃 Rekomendasi Aktivitas Fisik:", style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF0D9488))),
-                            const SizedBox(height: 6),
-                            Text("• Target Durasi: ${result["sports_duration"]} menit/minggu", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                            Text("• Target Langkah: ${result["sports_target_steps"]} langkah/hari", style: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-                            const SizedBox(height: 6),
-                            Text("${result["sports_recommendation"]}", style: const TextStyle(fontSize: 13, color: const Color(0xFF1E293B))),
+                            const SizedBox(height: 8),
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.blue.shade50,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const Icon(Icons.timer_outlined, color: Colors.blue, size: 20),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${result["sports_duration"]} mnt",
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.blue),
+                                        ),
+                                        const Text("per minggu", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(width: 8),
+                                Expanded(
+                                  child: Container(
+                                    padding: const EdgeInsets.all(10),
+                                    decoration: BoxDecoration(
+                                      color: Colors.purple.shade50,
+                                      borderRadius: BorderRadius.circular(10),
+                                    ),
+                                    child: Column(
+                                      children: [
+                                        const Icon(Icons.directions_walk_rounded, color: Colors.purple, size: 20),
+                                        const SizedBox(height: 4),
+                                        Text(
+                                          "${result["sports_target_steps"]}",
+                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14, color: Colors.purple),
+                                        ),
+                                        const Text("langkah/hari", style: TextStyle(fontSize: 10, color: Colors.grey)),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              "${result["sports_recommendation"]}",
+                              style: const TextStyle(fontSize: 13, color: Color(0xFF1E293B)),
+                            ),
                           ],
                         ),
                       ),

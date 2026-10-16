@@ -19,6 +19,7 @@ abstract class Routes {
   static const STRESS = _Paths.STRESS;
   static const AKTIVITAS = _Paths.AKTIVITAS;
   static const PROGRESS_AKTIFITAS = _Paths.PROGRESS_AKTIFITAS;
+  static const COBAAA = _Paths.COBAAA;
 }
 
 abstract class _Paths {
@@ -39,4 +40,5 @@ abstract class _Paths {
   static const STRESS = '/stress';
   static const AKTIVITAS = '/aktivitas';
   static const PROGRESS_AKTIFITAS = '/progress-aktifitas';
+  static const COBAAA = '/cobaaa';
 }

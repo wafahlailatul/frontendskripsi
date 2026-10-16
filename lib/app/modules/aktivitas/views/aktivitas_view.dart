@@ -69,10 +69,20 @@ class _AktivitasViewState extends State<AktivitasView> {
       });
     });
   }
+Future<void> mulaiAktivitas() async {
+    bool isStarted = await BackgroundService.start();
+    
+    if (!isStarted) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Izin lokasi & sensor fisik diperlukan untuk memulai.")),
+        );
+      }
+      return;
+    }
 
-  Future<void> mulaiAktivitas() async {
-    await BackgroundService.start();
-    // Mengirim target langkah terbaru ke background thread service
+    // Berikan jeda 500ms agar isolate background service siap menerima event
+    await Future.delayed(const Duration(milliseconds: 500));
     BackgroundService.service.invoke("setTarget", {"targetLangkah": targetLangkah});
     
     setState(() {
@@ -179,7 +189,11 @@ class _AktivitasViewState extends State<AktivitasView> {
                       "$langkah",
                       style: const TextStyle(fontSize: 38, fontWeight: FontWeight.w800, color: Color(0xFF1E293B), letterSpacing: -1),
                     ),
-                    const SizedBox(height: 2),
+                    const Text(
+                      "Langkah",
+                      style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.teal),
+                    ),
+                    const SizedBox(height: 4),
                     Text(
                       "Status: $statusAktivitas",
                       style: TextStyle(fontSize: 13, fontWeight: FontWeight.w500, color: Colors.grey.shade600),
@@ -187,6 +201,14 @@ class _AktivitasViewState extends State<AktivitasView> {
                   ],
                 )
               ],
+            ),
+            const SizedBox(height: 16),
+            const Center(
+              child: Text(
+                "💡 Langkah ini akan dikonversi menjadi Durasi Olahraga\nuntuk perhitungan Analisis Risiko Penyakit Jantung Anda.",
+                textAlign: TextAlign.center,
+                style: TextStyle(fontSize: 12, color: Colors.teal, fontStyle: FontStyle.italic),
+              ),
             ),
             const SizedBox(height: 32),
 

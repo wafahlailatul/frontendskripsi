@@ -14,7 +14,6 @@ class BackgroundService {
     const AndroidInitializationSettings androidSettings =
         AndroidInitializationSettings('@mipmap/ic_launcher');
 
-    // 1. Channel khusus tracking (LOW Importance agar update setiap detik TIDAK berbunyi bip terus)
     const AndroidNotificationChannel channel = AndroidNotificationChannel(
       'activity_channel',
       'Aktivitas Fisik',
@@ -24,7 +23,6 @@ class BackgroundService {
       enableVibration: false,
     );
 
-    // 2. Channel khusus ALARM TARGET TERCAPAI (MAX Importance + Suara Aktif)
     const AndroidNotificationChannel alarmChannel = AndroidNotificationChannel(
       'alarm_target_channel',
       'Alarm Target Olahraga',
@@ -34,12 +32,11 @@ class BackgroundService {
       enableVibration: true,
     );
 
-    // Daftarkan kedua channel ke sistem Android
-    await notification.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(channel);
-
-    await notification.resolvePlatformSpecificImplementation<
-        AndroidFlutterLocalNotificationsPlugin>()?.createNotificationChannel(alarmChannel);
+    final androidPlugin = notification.resolvePlatformSpecificImplementation<
+        AndroidFlutterLocalNotificationsPlugin>();
+    
+    await androidPlugin?.createNotificationChannel(channel);
+    await androidPlugin?.createNotificationChannel(alarmChannel);
 
     await notification.initialize(
       const InitializationSettings(android: androidSettings),
@@ -52,25 +49,40 @@ class BackgroundService {
         isForegroundMode: true,
         foregroundServiceNotificationId: 100,
         initialNotificationTitle: "Aktivitas Fisik",
-        initialNotificationContent: "Menunggu instruksi...",
+        initialNotificationContent: "Memulai pelacakan...",
         notificationChannelId: 'activity_channel',
       ),
       iosConfiguration: IosConfiguration(),
     );
   }
 
-  static Future<void> start() async {
-    // Meminta izin sensor esensial sebelum service dijalankan
-    Map<Permission, PermissionStatus> statuses = await [
-      Permission.activityRecognition,
-      Permission.locationWhenInUse,
-      Permission.locationAlways,
-    ].request();
-
-    if (statuses[Permission.activityRecognition]!.isGranted &&
-        statuses[Permission.locationWhenInUse]!.isGranted) {
-      await service.startService();
+  static Future<bool> start() async {
+    // 1. Cek & Minta Izin Notifikasi
+    if (!await Permission.notification.isGranted) {
+      await Permission.notification.request();
     }
+    
+    // 2. Cek & Minta Izin Sensor Gerak dan Lokasi (Saat Digunakan)
+    if (!await Permission.activityRecognition.isGranted || 
+        !await Permission.locationWhenInUse.isGranted) {
+      await [
+        Permission.activityRecognition,
+        Permission.locationWhenInUse,
+      ].request();
+    }
+
+    bool activityGranted = await Permission.activityRecognition.isGranted;
+    bool locationGranted = await Permission.locationWhenInUse.isGranted;
+
+    // 3. Jika izin dasar diberikan, jalankan service
+    if (activityGranted && locationGranted) {
+      // Minta locationAlways secara terpisah HANYA JIKA belum diizinkan
+      if (!await Permission.locationAlways.isGranted) {
+        await Permission.locationAlways.request();
+      }
+      return await service.startService();
+    }
+    return false;
   }
 
   static Future<void> stop() async {
@@ -88,8 +100,8 @@ void onStart(ServiceInstance service) async {
   int langkah = 0;
   double jarak = 0;
   double kecepatan = 0;
-  int targetLangkah = 7000; // Default jika belum dilempar dari DB
-  bool alarmTriggered = false; // Kunci pengunci agar alarm hanya bunyi sekali
+  int targetLangkah = 7000;
+  bool alarmTriggered = false;
 
   Position? posisiSebelumnya;
   DateTime mulai = DateTime.now();
@@ -98,7 +110,6 @@ void onStart(ServiceInstance service) async {
   StreamSubscription<StepCount>? stepSubscription;
   StreamSubscription<Position>? gpsSubscription;
 
-  // Fungsi internal untuk memaksa Android memperbarui teks notifikasi langsung dari sensor (Background/Layar Mati)
   void paksaUpdateNotifikasiAndroid() {
     if (service is AndroidServiceInstance) {
       Duration durasi = DateTime.now().difference(mulai);
@@ -112,96 +123,25 @@ void onStart(ServiceInstance service) async {
     }
   }
 
-  // Menerima input target langkah yang dinamis dari UI Flutter
+  // Tampilkan notifikasi awal secara langsung
+  paksaUpdateNotifikasiAndroid();
+
   service.on("setTarget").listen((event) {
     if (event != null && event["targetLangkah"] != null) {
       targetLangkah = event["targetLangkah"];
-    }
-  });
-
-  // ==========================================
-  // SENSOR PEDOMETER (LANGKAH KAKI)
-  // ==========================================
-  stepSubscription = Pedometer.stepCountStream.listen(
-    (StepCount event) {
-      if (langkahAwal == -1) {
-        langkahAwal = event.steps;
-      }
-      langkah = event.steps - langkahAwal;
-      if (langkah < 0) langkah = 0;
-
-      // Paksa update teks notifikasi setiap kali melangkah (walau layar mati)
       paksaUpdateNotifikasiAndroid();
-
-      // Logika alarm pemicu ketika target langkah tercapai (Hanya eksekusi sekali)
-      if (langkah >= targetLangkah && !alarmTriggered && langkahAwal != -1) {
-        alarmTriggered = true; // Langsung kunci status ke TRUE
-
-        BackgroundService.notification.show(
-          200, // ID baru khusus alarm target agar tidak menimpa notifikasi utama
-          "🎉 Target Tercapai!",
-          "Hebat! Anda telah memenuhi target $targetLangkah langkah hari ini.",
-          const NotificationDetails(
-            android: AndroidNotificationDetails(
-              'alarm_target_channel', // Diarahkan ke channel berbunyi kuat
-              'Alarm Target Olahraga',
-              importance: Importance.max,
-              priority: Priority.high,
-              playSound: true,
-              onlyAlertOnce: true, // Android OS dipaksa mengunci suara agar tidak berulang
-            ),
-          ),
-        );
-      }
-    },
-    onError: (error) => print("PEDOMETER ERROR: $error"),
-  );
-
-  // ==========================================
-  // SENSOR GPS (JARAK & KECEPATAN)
-  // ==========================================
-  gpsSubscription = Geolocator.getPositionStream(
-    locationSettings: AndroidSettings(
-      accuracy: LocationAccuracy.bestForNavigation,
-      distanceFilter: 1, // Update setiap bergerak 1 meter
-      intervalDuration: const Duration(seconds: 2),
-      foregroundNotificationConfig: ForegroundNotificationConfig(
-        notificationText: "Mencatat rute aktivitas kardio Anda",
-        notificationTitle: "GPS Aktif",
-      ),
-    ),
-  ).listen((Position position) {
-    if (position.accuracy > 25) return; // Abaikan jika sinyal GPS buruk
-
-    if (posisiSebelumnya != null) {
-      double distance = Geolocator.distanceBetween(
-        posisiSebelumnya!.latitude,
-        posisiSebelumnya!.longitude,
-        position.latitude,
-        position.longitude,
-      );
-
-      if (distance >= 1.0) {
-        jarak += distance / 1000; // Konversi ke Kilometer
-      }
     }
-    posisiSebelumnya = position;
-    kecepatan = position.speed * 3.6; // Konversi m/s ke km/jam
-
-    // Paksa update teks notifikasi setiap kali koordinat GPS bergeser (walau layar mati)
-    paksaUpdateNotifikasiAndroid();
   });
 
   // ==========================================
-  // INTERVAL REFRESH UI (1 DETIK)
+  // INTERVAL REFRESH UTAMA (TIMER WAKTU)
   // ==========================================
   timer = Timer.periodic(const Duration(seconds: 1), (_) {
     Duration durasi = DateTime.now().difference(mulai);
 
-    // Update waktu berkala agar detik terus berjalan mulus di status bar saat layar hidup
+    // Update Notifikasi & Kirim ke UI setiap detik
     paksaUpdateNotifikasiAndroid();
 
-    // Kirim data terbaru ke UI halaman utama Flutter
     service.invoke("update", {
       "langkah": langkah,
       "jarak": jarak,
@@ -211,8 +151,78 @@ void onStart(ServiceInstance service) async {
   });
 
   // ==========================================
-  // AKSI KETIKA TOMBOL SELESAI DITEKAN
+  // SENSOR PEDOMETER
   // ==========================================
+  try {
+    stepSubscription = Pedometer.stepCountStream.listen(
+      (StepCount event) {
+        if (langkahAwal == -1) {
+          langkahAwal = event.steps;
+        }
+        langkah = event.steps - langkahAwal;
+        if (langkah < 0) langkah = 0;
+
+        paksaUpdateNotifikasiAndroid();
+
+        if (langkah >= targetLangkah && !alarmTriggered && langkahAwal != -1) {
+          alarmTriggered = true;
+          BackgroundService.notification.show(
+            200,
+            "🎉 Target Tercapai!",
+            "Hebat! Anda telah memenuhi target $targetLangkah langkah hari ini.",
+            const NotificationDetails(
+              android: AndroidNotificationDetails(
+                'alarm_target_channel',
+                'Alarm Target Olahraga',
+                importance: Importance.max,
+                priority: Priority.high,
+                playSound: true,
+              ),
+            ),
+          );
+        }
+      },
+      onError: (error) => print("PEDOMETER ERROR: $error"),
+    );
+  } catch (e) {
+    print("Gagal mengaktifkan Pedometer: $e");
+  }
+
+  // ==========================================
+  // SENSOR GPS
+  // ==========================================
+  try {
+  gpsSubscription = Geolocator.getPositionStream(
+    locationSettings: AndroidSettings( // <-- Hapus kata 'const' di sini
+      accuracy: LocationAccuracy.high,
+      distanceFilter: 1,
+      intervalDuration: const Duration(seconds: 2), // 'const' hanya dipasang di Duration jika diperlukan
+    ),
+  ).listen(
+    (Position position) {
+      if (posisiSebelumnya != null) {
+        // Hitung jarak dalam meter, lalu ubah ke kilometer
+        double d = Geolocator.distanceBetween(
+          posisiSebelumnya!.latitude,
+          posisiSebelumnya!.longitude,
+          position.latitude,
+          position.longitude,
+        );
+        jarak += (d / 1000.0);
+
+        // Kecepatan dari GPS (m/s) diubah ke km/h
+        kecepatan = position.speed * 3.6;
+      }
+      posisiSebelumnya = position;
+      paksaUpdateNotifikasiAndroid();
+    },
+    onError: (e) => print("GPS ERROR: $e"),
+  );
+} catch (e) {
+  print("Gagal mengaktifkan GPS: $e");
+}
+
+  // STOP SERVICE
   service.on("stop").listen((event) {
     timer?.cancel();
     stepSubscription?.cancel();

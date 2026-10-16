@@ -10,6 +10,8 @@ import '../modules/aktivitas/bindings/aktivitas_binding.dart';
 import '../modules/aktivitas/views/aktivitas_view.dart';
 import '../modules/ble_scan/bindings/ble_scan_binding.dart';
 import '../modules/ble_scan/views/ble_scan_view.dart';
+import '../modules/cobaaa/bindings/cobaaa_binding.dart';
+import '../modules/cobaaa/views/cobaaa_view.dart';
 import '../modules/heartmonitor/bindings/heartmonitor_binding.dart';
 import '../modules/heartmonitor/views/heartmonitor_view.dart';
 import '../modules/home/bindings/home_binding.dart';
@@ -116,6 +118,11 @@ class AppPages {
       name: _Paths.PROGRESS_AKTIFITAS,
       page: () => const ProgressAktifitasView(),
       binding: ProgressAktifitasBinding(),
+    ),
+    GetPage(
+      name: _Paths.COBAAA,
+      page: () => const CobaaaView(),
+      binding: CobaaaBinding(),
     ),
   ];
 }

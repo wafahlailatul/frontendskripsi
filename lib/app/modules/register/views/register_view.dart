@@ -28,15 +28,22 @@ class _RegisterViewState
       TextEditingController();
 
   bool isLoading = false;
+  bool isPasswordObscured = true;
 
   @override
   Widget build(BuildContext context) {
 
     return Scaffold(
-      backgroundColor: const Color(0xFFEAF7FF),
-
-      body: SafeArea(
-        child: SingleChildScrollView(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Colors.white, Color(0xFFBAE6FD)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
           child: Column(
             children: [
 
@@ -71,39 +78,38 @@ class _RegisterViewState
               /// CARD REGISTER
               Container(
                 width: double.infinity,
-
-                margin:
-                    const EdgeInsets.symmetric(
-                  horizontal: 25,
-                ),
-
-                padding: const EdgeInsets.all(25),
-
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(32),
                 decoration: BoxDecoration(
                   color: Colors.white,
-
-                  borderRadius:
-                      BorderRadius.circular(30),
-
-                  border: Border.all(
-                    color: Colors.blue,
-                    width: 1.5,
-                  ),
+                  borderRadius: BorderRadius.circular(32),
+                  boxShadow: [
+                    BoxShadow(
+                      color: const Color(0xFF2563EB).withOpacity(0.08),
+                      blurRadius: 24,
+                      offset: const Offset(0, 12),
+                    ),
+                  ],
                 ),
-
                 child: Column(
                   children: [
-
                     const Text(
-                      "Daftar akun",
+                      "Daftar Akun Baru",
                       style: TextStyle(
-                        fontSize: 22,
-                        fontWeight:
-                            FontWeight.bold,
-                        fontFamily: 'Serif',
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Color(0xFF1E293B),
+                        letterSpacing: -0.5,
                       ),
                     ),
-
+                    const SizedBox(height: 8),
+                    const Text(
+                      "Lengkapi data di bawah ini",
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: Color(0xFF64748B),
+                      ),
+                    ),
                     const SizedBox(height: 35),
 
                     /// USERNAME
@@ -179,10 +185,24 @@ class _RegisterViewState
                     const SizedBox(height: 35),
 
                     /// BUTTON DAFTAR
-                    SizedBox(
-                      width: 120,
-                      height: 45,
-
+                    Container(
+                      width: double.infinity,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        gradient: const LinearGradient(
+                          colors: [Color(0xFF1E3A8A), Color(0xFF2563EB)],
+                          begin: Alignment.centerLeft,
+                          end: Alignment.centerRight,
+                        ),
+                        borderRadius: BorderRadius.circular(16),
+                        boxShadow: [
+                          BoxShadow(
+                            color: const Color(0xFF2563EB).withOpacity(0.3),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
+                      ),
                       child: ElevatedButton(
 
                         onPressed: () async {
@@ -273,22 +293,11 @@ class _RegisterViewState
                           }
                         },
 
-                        style:
-                            ElevatedButton.styleFrom(
-                          backgroundColor:
-                              const Color(
-                            0xFF9DD2F5,
-                          ),
-
-                          elevation: 4,
-
-                          shape:
-                              RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              12,
-                            ),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: Colors.transparent,
+                          shadowColor: Colors.transparent,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
 
@@ -307,11 +316,10 @@ class _RegisterViewState
                             : const Text(
                                 "Daftar",
                                 style: TextStyle(
-                                  color:
-                                      Colors.white,
-                                  fontWeight:
-                                      FontWeight
-                                          .bold,
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.5,
                                 ),
                               ),
                       ),
@@ -350,6 +358,7 @@ class _RegisterViewState
             ],
           ),
         ),
+        ),
       ),
     );
   }
@@ -378,44 +387,44 @@ class _RegisterViewState
     required IconData icon,
     bool isPassword = false,
   }) {
-
     return TextField(
       controller: controller,
-      obscureText: isPassword,
-
+      obscureText: isPassword ? isPasswordObscured : false,
+      style: const TextStyle(fontSize: 15, color: Color(0xFF334155)),
       decoration: InputDecoration(
         hintText: hint,
-
+        hintStyle: const TextStyle(color: Color(0xFF94A3B8), fontSize: 14),
         prefixIcon: Icon(
           icon,
-          color: Colors.pink,
+          color: const Color(0xFF2563EB),
+          size: 22,
         ),
-
+        suffixIcon: isPassword
+            ? IconButton(
+                icon: Icon(
+                  isPasswordObscured
+                      ? Icons.visibility_off_rounded
+                      : Icons.visibility_rounded,
+                  color: const Color(0xFF94A3B8),
+                  size: 22,
+                ),
+                onPressed: () {
+                  setState(() {
+                    isPasswordObscured = !isPasswordObscured;
+                  });
+                },
+              )
+            : null,
         filled: true,
-        fillColor: Colors.white,
-
-        contentPadding:
-            const EdgeInsets.symmetric(
-          vertical: 16,
-        ),
-
+        fillColor: const Color(0xFFF8FAFC),
+        contentPadding: const EdgeInsets.symmetric(vertical: 18),
         enabledBorder: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(12),
-
-          borderSide: const BorderSide(
-            color: Colors.black54,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFFF1F5F9)),
         ),
-
         focusedBorder: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(12),
-
-          borderSide: const BorderSide(
-            color: Colors.blue,
-            width: 1.5,
-          ),
+          borderRadius: BorderRadius.circular(16),
+          borderSide: const BorderSide(color: Color(0xFF2563EB), width: 1.5),
         ),
       ),
     );

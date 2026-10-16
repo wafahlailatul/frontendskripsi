@@ -54,7 +54,7 @@ class _OtpViewState extends State<OtpView> {
 
                   /// TITLE
                   const Text(
-                    "VITAPULSE",
+                    "HEARTIFY",
                     style: TextStyle(
                       fontSize: 28,
                       fontWeight: FontWeight.bold,

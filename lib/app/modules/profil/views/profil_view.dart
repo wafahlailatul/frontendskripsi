@@ -1,5 +1,8 @@
+import 'dart:io';
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:image_picker/image_picker.dart';
 import 'package:kesehatan_jantung/app/modules/login/views/login_view.dart';
 import 'package:kesehatan_jantung/app/services/api_service.dart';
 import 'package:kesehatan_jantung/app/services/storage_service.dart';
@@ -13,14 +16,17 @@ class ProfilView extends StatefulWidget {
 
 class _ProfilViewState extends State<ProfilView> {
   final namaController = TextEditingController();
+  final emailController = TextEditingController();
   final tinggiController = TextEditingController();
   final beratController = TextEditingController();
 
   DateTime? selectedDate;
 
   String gender = "Perempuan";
+  String email = "";
 
   double bmi = 0;
+  File? profileImage;
 
   String bmiStatus = "--";
   @override
@@ -59,6 +65,10 @@ Future<void> loadProfile() async {
             data["gender"] ??
             "Perempuan";
 
+        email = 
+            data["email"] ?? 
+            "";
+
         selectedDate =
             DateTime.parse(
               data["birth_date"],
@@ -68,7 +78,39 @@ Future<void> loadProfile() async {
           data["bmi"].toString(),
         );
       });
+
+      if (data["profile_picture"] != null && data["profile_picture"].isNotEmpty) {
+        try {
+          final bytes = base64Decode(data["profile_picture"]);
+          final file = File('${Directory.systemTemp.path}/profile_from_db.png');
+          await file.writeAsBytes(bytes);
+          setState(() {
+            profileImage = file;
+          });
+          await StorageService.saveProfileImagePath(file.path);
+        } catch (e) {
+          print("Failed to decode profile picture: $e");
+        }
+      }
     }
+
+    final storedEmail = await StorageService.getEmail();
+    if (storedEmail != null && storedEmail.isNotEmpty) {
+      setState(() {
+        emailController.text = storedEmail;
+        email = storedEmail;
+      });
+    } else if (email.isNotEmpty) {
+      emailController.text = email;
+    }
+
+    final storedImage = await StorageService.getProfileImagePath();
+    if (storedImage != null && storedImage.isNotEmpty) {
+      setState(() {
+        profileImage = File(storedImage);
+      });
+    }
+
   } catch (e) {
     print(
       "Load profile error: $e",
@@ -118,6 +160,26 @@ Future<void> loadProfile() async {
     }
   }
 
+  Future<void> _pickImage() async {
+    try {
+      final ImagePicker picker = ImagePicker();
+      final XFile? image = await picker.pickImage(source: ImageSource.gallery);
+      
+      if (image != null) {
+        setState(() {
+          profileImage = File(image.path);
+        });
+        await StorageService.saveProfileImagePath(image.path);
+      }
+    } catch (e) {
+      Get.snackbar(
+        "Error",
+        "Gagal memilih gambar: $e",
+        snackPosition: SnackPosition.BOTTOM,
+      );
+    }
+  }
+
 Future<void> saveProfile() async {
   try {
 
@@ -164,6 +226,10 @@ if (age < 17) {
       weight: double.parse(
         beratController.text,
       ),
+
+      profilePicture: profileImage != null 
+          ? base64Encode(await profileImage!.readAsBytes())
+          : null,
     );
 if (result["status"] == "success") {
 
@@ -305,23 +371,48 @@ if (result["status"] == "success") {
           children: [
 
             /// FOTO
-            Container(
-              padding: const EdgeInsets.all(4),
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: Colors.blue,
-                  width: 3,
+            GestureDetector(
+              onTap: _pickImage,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.blue,
+                    width: 3,
+                  ),
                 ),
-              ),
-              child: CircleAvatar(
-                radius: 50,
-                backgroundColor:
-                    Colors.blue.shade100,
-                child: const Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.white,
+                child: Stack(
+                  children: [
+                    CircleAvatar(
+                      radius: 50,
+                      backgroundColor: Colors.blue.shade100,
+                      backgroundImage: profileImage != null ? FileImage(profileImage!) : null,
+                      child: profileImage == null
+                          ? const Icon(
+                              Icons.person,
+                              size: 60,
+                              color: Colors.white,
+                            )
+                          : null,
+                    ),
+                    Positioned(
+                      bottom: 0,
+                      right: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(6),
+                        decoration: const BoxDecoration(
+                          color: Colors.blue,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.camera_alt,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ),
@@ -344,6 +435,25 @@ if (result["status"] == "success") {
             ),
 
             const SizedBox(height: 15),
+
+            TextField(
+              controller: emailController,
+              readOnly: true, // Email tidak bisa diedit
+              decoration: InputDecoration(
+                labelText: "Email",
+                prefixIcon:
+                    const Icon(Icons.email),
+                filled: true,
+                fillColor: Colors.grey.shade100, // Warna sedikit berbeda untuk menandakan read-only
+                border: OutlineInputBorder(
+                  borderRadius:
+                      BorderRadius.circular(15),
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 15),
+
 
             InkWell(
               onTap: pickDate,
@@ -430,6 +540,8 @@ if (result["status"] == "success") {
 
             const SizedBox(height: 15),
 
+            
+
             TextField(
               controller: beratController,
               keyboardType:
@@ -447,6 +559,7 @@ if (result["status"] == "success") {
                 ),
               ),
             ),
+
 
             const SizedBox(height: 25),
 
